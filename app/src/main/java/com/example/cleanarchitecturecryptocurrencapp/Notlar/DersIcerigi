@@ -1,0 +1,90 @@
+1. presentation package olustur
+2. domain
+3. data
+4. common
+        Constants  class olustur.
+            object Constants{
+                    const val BASE_URL="base url yaz buraya"
+                    }
+        sealed class Resources diye bir class olustur.  Bunu heryerden buluruz zaten.
+5. di
+
+
+Presentation package icinde  features isimleri yer alacak
+Presentation
+    coin_list      Bunlar screendir
+            components
+            class CoinListViewModel { }
+    coin_details   Bunlar screendir.
+            components
+
+
+Domain icinde
+    model
+            // Coin isimli bir class olusturdum. Serializde olmadan yazcam.Bu benim model sinitim olacak
+            // CoinDetails diye baska bir model daha olusturdum. DTO da bir extension yapip buna cevircem yine
+
+    repository
+            interface CoinRepository {
+                        // Burda metotlarimi tanimladim. Bunu diger repositoryde uygulayacagim.
+                            }
+
+
+
+    use_case
+        get_coin    tek bir koin getirmek icin
+            GetCoinsUseCase  @Inject constructor(
+                private val repository: CoinRepository
+                // Burda CoinRepositoryImpl sinifini degil de direk interace'i inject ettim.
+                ){   }
+        get_coins   tum coinsleri getirmek icin
+
+
+data icinde
+    remote
+        Interface CoinPaprikaAPI{}   // Retrofit api burda yazcam.
+        // Interface icinde iki tane suspend function yazcam.
+        dto
+            // Burda  Json to Kotlin class  isimili plugin indir.
+            // Burda gelen veriyi pars etmek icin kullancam. Burda kendi bir class olusturacak.
+            // Burda bir extension yapip cevirdigim modeli kendi modelime cevircem.
+            // Burda ikinci baska dto daha olusturdum. Cunku iki farkli sorgu atcam.
+    repository
+            CoinRepositoryImpl {}   sinifi yapip yukarda yaptigim inteface'i burda uygulayacagim.
+
+
+
+
+di package for dependency injection
+    @Module
+    @InstallIn(SingletonComponent::java.class)
+    object AppModule{
+            @Provides
+            @Singleton
+
+        }
+
+
+
+Ornek  Use Case yaziyorum
+class GetCoinsUseCase{
+            operator fun invoke():Flow<Resource<List<Coin>>> = flow{
+                try{
+                    emit(Resource.Loading())
+                    val coins= repository.getCoins().map{ it.coin()}
+                    //Burda da aldigim elde ettigimi dto dan kendi kotlin modelime donusturdum.
+                    // Success oldugunda burda generik type yapmistim ya onun icin istedigim modeli gonderebilirim.
+                     emit(Resource.Succes())
+                } catch(e: HttpException){
+                    emit (Resources.Error(e.localizedMessage?: "An unexpected error occured"))
+                    // Hata mesaji null ise de  bu yaziyi goster diyecegiz.
+                } catch(e: IOException){
+                    // Burda da internet hatasi olusmus demektir.
+                    emit (Resources.Error("Check your internet connection"))
+                    // e.localizedMessage
+                    }
+                }
+        }
+
+// Bir tane daha use case yapiyorum tek bir coin elde etmek icin
+// Daha sonra Hilt enjecte et.
